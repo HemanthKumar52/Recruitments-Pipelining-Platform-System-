@@ -57,3 +57,4 @@ Automate candidate evaluation from CV submission to interview booking. A compreh
 
 ## Architecture
 See [ARCHITECTURE.md](ARCHITECTURE.md) for a detailed breakdown of the system components and data flow.
+See [DIAGRAMS.md](DIAGRAMS.md) for visual representations of the system, workflow, and database structure.
