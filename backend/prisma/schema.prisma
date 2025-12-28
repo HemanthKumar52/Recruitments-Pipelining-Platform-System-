@@ -1,0 +1,95 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Candidate {
+  id              Int      @id @default(autoincrement())
+  email           String   @unique @db.VarChar(255)
+  name            String   @db.VarChar(255)
+  phone           String?  @db.VarChar(50)
+  positionApplied String?  @map("position_applied") @db.VarChar(255)
+  currentStage    String?  @default("applied") @map("current_stage") @db.VarChar(50)
+  resumeUrl       String?  @map("resume_url")
+  coverLetter     String?  @map("cover_letter")
+  linkedinUrl     String?  @map("linkedin_url")
+  source          String?  @db.VarChar(100)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @default(now()) @updatedAt @map("updated_at")
+  metadata        Json?
+
+  interviewSchedules InterviewSchedule[]
+  activityLogs       ActivityLog[]
+  reminders          Reminder[]
+
+  @@map("candidates")
+}
+
+model PipelineStage {
+  id                   Int     @id @default(autoincrement())
+  stageName            String  @unique @map("stage_name") @db.VarChar(50)
+  stageOrder           Int     @map("stage_order")
+  autoAdvance          Boolean @default(false) @map("auto_advance")
+  advanceDelayHours    Int     @default(0) @map("advance_delay_hours")
+  notificationTemplate String? @map("notification_template") @db.VarChar(100)
+
+  @@map("pipeline_stages")
+}
+
+model InterviewSchedule {
+  id               Int      @id @default(autoincrement())
+  candidateId      Int?     @map("candidate_id")
+  interviewerEmail String?  @map("interviewer_email") @db.VarChar(255)
+  scheduledTime    DateTime? @map("scheduled_time")
+  durationMinutes  Int?     @default(60) @map("duration_minutes")
+  meetingLink      String?  @map("meeting_link")
+  status           String?  @default("scheduled") @db.VarChar(50)
+  interviewType    String?  @map("interview_type") @db.VarChar(100)
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  candidate Candidate? @relation(fields: [candidateId], references: [id])
+
+  @@map("interview_schedules")
+}
+
+model ActivityLog {
+  id            Int      @id @default(autoincrement())
+  candidateId   Int?     @map("candidate_id")
+  action        String   @db.VarChar(255)
+  previousStage String?  @map("previous_stage") @db.VarChar(50)
+  newStage      String?  @map("new_stage") @db.VarChar(50)
+  performedBy   String?  @map("performed_by") @db.VarChar(255)
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  candidate Candidate? @relation(fields: [candidateId], references: [id])
+
+  @@map("activity_logs")
+}
+
+model PipelineConfig {
+  id          Int      @id @default(autoincrement())
+  configKey   String   @unique @map("config_key") @db.VarChar(100)
+  configValue Json     @map("config_value")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("pipeline_config")
+}
+
+model Reminder {
+  id           Int       @id @default(autoincrement())
+  candidateId  Int?      @map("candidate_id")
+  reminderType String?   @map("reminder_type") @db.VarChar(100)
+  scheduledFor DateTime? @map("scheduled_for")
+  status       String?   @default("pending") @db.VarChar(50)
+  message      String?
+  channel      String?   @db.VarChar(50)
+
+  candidate Candidate? @relation(fields: [candidateId], references: [id])
+
+  @@map("reminders")
+}

@@ -1,0 +1,88 @@
+{
+  "name": "Recruitment Pipeline Automation",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "submit-application",
+        "responseMode": "lastNode"
+      },
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "application": "appXXXXXXXX",
+        "table": "Candidates",
+        "columns": { "Email": "={{$json.body.email}}", "Name": "={{$json.body.name}}" }
+      },
+      "name": "Airtable Create",
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "model": "gpt-4",
+        "prompt": "Evaluate this candidate based on the resume..."
+      },
+      "name": "AI Assessment",
+      "type": "n8n-nodes-base.openAi",
+      "typeVersion": 1,
+      "position": [500, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [ { "value1": "={{$json.qualified}}", "value2": true } ]
+        }
+      },
+      "name": "Filter Qualified",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [700, 300]
+    },
+    {
+      "parameters": {
+        "toEmail": "={{$json.email}}",
+        "subject": "Interview Invitation",
+        "text": "Please schedule your interview here: ..."
+      },
+      "name": "Send Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [900, 200]
+    },
+    {
+      "parameters": {
+        "calendar": "primary",
+        "start": "={{$json.interviewDate}}"
+      },
+      "name": "Google Calendar",
+      "type": "n8n-nodes-base.googleCalendar",
+      "typeVersion": 1,
+      "position": [1100, 200]
+    },
+    {
+      "parameters": {
+        "channel": "hiring-channel",
+        "text": "New candidate scheduled: {{$json.name}}"
+      },
+      "name": "Slack Notification",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 1,
+      "position": [1300, 200]
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [ [ { "node": "Airtable Create", "type": "main", "index": 0 } ] ] },
+    "Airtable Create": { "main": [ [ { "node": "AI Assessment", "type": "main", "index": 0 } ] ] },
+    "AI Assessment": { "main": [ [ { "node": "Filter Qualified", "type": "main", "index": 0 } ] ] },
+    "Filter Qualified": { "main": [ [ { "node": "Send Email", "type": "main", "index": 0 } ] ] },
+    "Send Email": { "main": [ [ { "node": "Google Calendar", "type": "main", "index": 0 } ] ] },
+    "Google Calendar": { "main": [ [ { "node": "Slack Notification", "type": "main", "index": 0 } ] ] }
+  }
+}
